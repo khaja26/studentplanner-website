@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Task</title>
+    <style>
+        /* Add your CSS styles here */
+        body {
+            font-family: "Lato", sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #0a3d62; /* Dark blue color */
+            font-family: "Arial", sans-serif;
+            font-size: 28px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+
+        input[type="date"], input[type="text"], input[type="time"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        input[type="submit"], button {
+            background-color: #0a3d62;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        input[type="submit"]:hover, button:hover {
+            background-color: #f39c12;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #0a3d62;
+            color: white;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .checkbox {
+            transform: scale(1.2);
+            margin-right: 10px;
+        }
+
+        .message {
+            text-align: center;
+            font-size: 18px;
+            color: green;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Delete Task</h2>
+
+<!-- Form to select date -->
+<form id="searchTaskForm" onsubmit="fetchTasksByDate(event)">
+    <label for="taskDate">Select Date:</label>
+    <input type="date" id="taskDate" name="taskDate" required>
+    <input type="submit" value="Search">
+</form>
+
+<!-- Form to display and delete tasks -->
+<form id="deleteTaskForm" style="display:none;" onsubmit="deleteSelectedTasks(event)">
+    <table id="tasksTable">
+        <thead>
+            <tr>
+                <th>Select</th>
+                <th>Task Description</th>
+                <th>Date</th>
+                <th>From Time</th>
+                <th>To Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Task rows will be inserted here -->
+        </tbody>
+    </table>
+    <input type="submit" value="Delete Selected Tasks">
+</form>
+
+<!-- Confirmation message -->
+<div id="message" class="message"></div>
+
+<script>
+// Open or create the IndexedDB database
+const request = indexedDB.open("mydb", 1);
+
+request.onerror = function(event) {
+  console.error("Database error: " + event.target.errorCode);
+};
+
+let db;
+request.onsuccess = function(event) {
+  db = event.target.result;
+};
+
+request.onupgradeneeded = function(event) {
+  db = event.target.result;
+  const objectStore = db.createObjectStore("mytable", { keyPath: "id", autoIncrement: true });
+  objectStore.createIndex("taskDesc", "taskDesc", { unique: false });
+  objectStore.createIndex("taskDate", "taskDate", { unique: false });
+  objectStore.createIndex("fromTime", "fromTime", { unique: false });
+  objectStore.createIndex("toTime", "toTime", { unique: false });
+  console.log("Object store created or updated");
+};
+
+// Fetch tasks based on the selected date
+function fetchTasksByDate(event) {
+    event.preventDefault();
+    const taskDate = document.getElementById("taskDate").value;
+
+    const transaction = db.transaction(["mytable"], "readonly");
+    const objectStore = transaction.objectStore("mytable");
+    const index = objectStore.index("taskDate");
+
+    const request = index.getAll(taskDate); // Get all tasks for the date
+
+    request.onsuccess = function(event) {
+        const tasks = event.target.result;
+        const tbody = document.querySelector("#tasksTable tbody");
+        tbody.innerHTML = ""; // Clear existing rows
+
+        if (tasks.length > 0) {
+            tasks.forEach(task => {
+                const row = document.createElement("tr");
+
+                const selectCell = document.createElement("td");
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.className = "checkbox";
+                checkbox.value = task.id;
+                selectCell.appendChild(checkbox);
+                row.appendChild(selectCell);
+
+                const descCell = document.createElement("td");
+                descCell.textContent = task.taskDesc;
+                row.appendChild(descCell);
+
+                const dateCell = document.createElement("td");
+                dateCell.textContent = task.taskDate;
+                row.appendChild(dateCell);
+
+                const fromTimeCell = document.createElement("td");
+                fromTimeCell.textContent = task.fromTime;
+                row.appendChild(fromTimeCell);
+
+                const toTimeCell = document.createElement("td");
+                toTimeCell.textContent = task.toTime;
+                row.appendChild(toTimeCell);
+
+                tbody.appendChild(row);
+            });
+
+            document.getElementById("deleteTaskForm").style.display = "block";
+            document.getElementById("message").textContent = "";
+        } else {
+            document.getElementById("deleteTaskForm").style.display = "none";
+            document.getElementById("message").textContent = "No tasks found for the selected date.";
+        }
+    };
+
+    request.onerror = function(event) {
+        console.error("Error fetching tasks: ", event.target.error);
+    };
+}
+
+// Delete selected tasks
+function deleteSelectedTasks(event) {
+    event.preventDefault();
+    const checkboxes = document.querySelectorAll("#tasksTable tbody .checkbox:checked");
+    if (checkboxes.length === 0) {
+        alert("Please select at least one task to delete.");
+        return;
+    }
+
+    const transaction = db.transaction(["mytable"], "readwrite");
+    const objectStore = transaction.objectStore("mytable");
+
+    let deleteCount = 0;
+
+    checkboxes.forEach(checkbox => {
+        const taskId = Number(checkbox.value);
+        const deleteRequest = objectStore.delete(taskId);
+
+        deleteRequest.onsuccess = function() {
+            deleteCount++;
+            if (deleteCount === checkboxes.length) {
+                document.getElementById("message").textContent = "Selected task(s) deleted successfully.";
+                document.getElementById("deleteTaskForm").style.display = "none";
+                document.getElementById("searchTaskForm").reset();
+            }
+        };
+
+        deleteRequest.onerror = function(event) {
+            console.error("Error deleting task: ", event.target.error);
+        };
+    });
+}
+</script>
+
+</body>
+</html>

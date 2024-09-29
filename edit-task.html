@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Task</title>
+    <style>
+        body {
+            font-family: "Lato", sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #0a3d62;
+        }
+
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+
+        input[type="date"], input[type="text"], input[type="time"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        input[type="submit"] {
+            background-color: #0a3d62;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #f39c12;
+        }
+
+        .checkbox {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Edit Task</h2>
+
+<form id="searchTaskForm" onsubmit="fetchTaskByDate(event)">
+    <label for="taskDate">Select Date:</label>
+    <input type="date" id="taskDate" name="taskDate" required>
+    <input type="submit" value="Search">
+</form>
+
+<form id="editTaskForm" style="display:none;" onsubmit="updateTask(event)">
+    <label for="taskDesc">Task Description:</label>
+    <input type="text" id="taskDesc" name="taskDesc">
+    <input type="checkbox" id="taskDescCheck" class="checkbox"> Update this field
+
+    <label for="fromTime">From Time:</label>
+    <input type="time" id="fromTime" name="fromTime">
+    <input type="checkbox" id="fromTimeCheck" class="checkbox"> Update this field
+
+    <label for="toTime">To Time:</label>
+    <input type="time" id="toTime" name="toTime">
+    <input type="checkbox" id="toTimeCheck" class="checkbox"> Update this field
+
+    <input type="submit" value="Update">
+</form>
+
+<script>
+// Open or create the IndexedDB database
+const request = indexedDB.open("mydb", 1);
+
+request.onerror = function(event) {
+  console.error("Database error: " + event.target.errorCode);
+};
+
+let db;
+request.onsuccess = function(event) {
+  db = event.target.result;
+};
+
+// Fetch tasks based on the selected date
+function fetchTaskByDate(event) {
+    event.preventDefault();
+    const taskDate = document.getElementById("taskDate").value;
+
+    const transaction = db.transaction(["mytable"], "readonly");
+    const objectStore = transaction.objectStore("mytable");
+
+    const index = objectStore.index("taskDate");
+    const request = index.get(taskDate);
+
+    request.onsuccess = function(event) {
+        const task = event.target.result;
+        if (task) {
+            // Populate the form with task data
+            document.getElementById("taskDesc").value = task.taskDesc;
+            document.getElementById("fromTime").value = task.fromTime;
+            document.getElementById("toTime").value = task.toTime;
+            document.getElementById("editTaskForm").style.display = "block";
+        } else {
+            alert("No task found for this date.");
+        }
+    };
+
+    request.onerror = function(event) {
+        console.error("Error fetching task: ", event.target.error);
+    };
+}
+
+// Update the task data based on user input
+function updateTask(event) {
+    event.preventDefault();
+
+    const taskDate = document.getElementById("taskDate").value;
+    const taskDesc = document.getElementById("taskDesc").value;
+    const fromTime = document.getElementById("fromTime").value;
+    const toTime = document.getElementById("toTime").value;
+
+    const updateFields = {
+        taskDesc: document.getElementById("taskDescCheck").checked ? taskDesc : null,
+        fromTime: document.getElementById("fromTimeCheck").checked ? fromTime : null,
+        toTime: document.getElementById("toTimeCheck").checked ? toTime : null
+    };
+
+    const transaction = db.transaction(["mytable"], "readwrite");
+    const objectStore = transaction.objectStore("mytable");
+
+    const index = objectStore.index("taskDate");
+    const request = index.get(taskDate);
+
+    request.onsuccess = function(event) {
+        const task = event.target.result;
+        if (task) {
+            // Update fields only if corresponding checkboxes are checked
+            if (updateFields.taskDesc) task.taskDesc = updateFields.taskDesc;
+            if (updateFields.fromTime) task.fromTime = updateFields.fromTime;
+            if (updateFields.toTime) task.toTime = updateFields.toTime;
+
+            const updateRequest = objectStore.put(task);
+
+            updateRequest.onsuccess = function() {
+                alert("Task updated successfully!");
+                document.getElementById("editTaskForm").reset();
+                document.getElementById("editTaskForm").style.display = "none";
+            };
+
+            updateRequest.onerror = function(event) {
+                console.error("Error updating task: ", event.target.error);
+            };
+        }
+    };
+
+    request.onerror = function(event) {
+        console.error("Error fetching task: ", event.target.error);
+    };
+}
+</script>
+
+</body>
+</html>

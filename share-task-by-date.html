@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Share Task by Date</title>
+    <style>
+        body {
+            font-family: "Lato", sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #0a3d62;
+        }
+
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="date"], button {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #0a3d62;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #f39c12;
+        }
+
+        .taskDetails {
+            background-color: #ffffff;
+            padding: 10px;
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            display: none; /* Hidden until data is fetched */
+        }
+
+        .message {
+            margin-top: 20px;
+            color: #27ae60;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Share Task by Date</h2>
+<form id="shareTaskForm">
+    <label for="taskDate">Choose Date:</label><br>
+    <input type="date" id="taskDate" name="taskDate" required><br><br>
+    <button type="button" onclick="fetchTask()">Get Task</button>
+</form>
+
+<!-- Task Details will be displayed here -->
+<div class="taskDetails" id="taskDetails">
+    <h3>Task Details</h3>
+    <p><strong>Description:</strong> <span id="desc"></span></p>
+    <p><strong>From Time:</strong> <span id="fromTime"></span></p>
+    <p><strong>To Time:</strong> <span id="toTime"></span></p>
+    <button type="button" onclick="shareTask()">Share Task</button>
+</div>
+
+<p class="message" id="shareMessage">Task Shared Successfully!</p>
+
+<script>
+// Open (or create) the database
+const request = indexedDB.open("mydb", 1);
+
+request.onerror = function(event) {
+  console.error("Database error: " + event.target.errorCode);
+};
+
+// Function to fetch task by date
+function fetchTask() {
+  const selectedDate = document.getElementById("taskDate").value;
+  
+  if (!selectedDate) {
+    alert("Please select a date.");
+    return;
+  }
+
+  const dbRequest = indexedDB.open("mydb", 1);
+
+  dbRequest.onsuccess = function(event) {
+    const db = event.target.result;
+    const transaction = db.transaction(["mytable"], "readonly");
+    const objectStore = transaction.objectStore("mytable");
+
+    const index = objectStore.index("taskDate");
+    const request = index.get(selectedDate);
+
+    request.onsuccess = function(event) {
+      const task = event.target.result;
+      if (task) {
+        document.getElementById("taskDetails").style.display = "block";
+        document.getElementById("desc").textContent = task.taskDesc;
+        document.getElementById("fromTime").textContent = task.fromTime;
+        document.getElementById("toTime").textContent = task.toTime;
+      } else {
+        alert("No task found for the selected date.");
+        document.getElementById("taskDetails").style.display = "none";
+      }
+    };
+
+    request.onerror = function(event) {
+      console.error("Error fetching task: ", event.target.error);
+    };
+  };
+
+  dbRequest.onerror = function(event) {
+    console.error("Error opening database: ", event.target.error);
+  };
+}
+
+// Function to share the task
+function shareTask() {
+  const taskDesc = document.getElementById("desc").textContent;
+  const fromTime = document.getElementById("fromTime").textContent;
+  const toTime = document.getElementById("toTime").textContent;
+
+  if (!taskDesc || !fromTime || !toTime) {
+    alert("No task available to share.");
+    return;
+  }
+
+  const taskData = `Task: ${taskDesc}\nFrom: ${fromTime}\nTo: ${toTime}`;
+
+  if (navigator.share) {
+    navigator.share({
+      title: 'Task Details',
+      text: taskData,
+    })
+    .then(() => {
+      document.getElementById("shareMessage").style.display = "block";
+      console.log('Task shared successfully.');
+    })
+    .catch((error) => console.error('Error sharing task:', error));
+  } else {
+    alert('Sharing is not supported in this browser.');
+  }
+}
+</script>
+
+</body>
+</html>

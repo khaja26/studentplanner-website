@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Enter Task</title>
+    <style>
+        body {
+            font-family: "Lato", sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #0a3d62; /* Dark blue color */
+        }
+
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="text"], input[type="date"], input[type="time"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        input[type="submit"] {
+            background-color: #0a3d62;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #f39c12;
+        }
+
+        .message {
+            margin-top: 20px;
+            color: #27ae60; /* Green for success */
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Enter Task</h2>
+<form id="taskForm" onsubmit="saveTask(event)">
+    <label for="taskDesc">Task Description:</label><br>
+    <input type="text" id="taskDesc" name="taskDesc" required><br><br>
+    <label for="taskDate">Date:</label><br>
+    <input type="date" id="taskDate" name="taskDate" required><br><br>
+    <label for="fromTime">From Time:</label><br>
+    <input type="time" id="fromTime" name="fromTime" required><br><br>
+    <label for="toTime">To Time:</label><br>
+    <input type="time" id="toTime" name="toTime" required><br><br>
+    <input type="submit" value="Submit">
+</form>
+
+<p class="message" id="successMessage">Task Saved Successfully!</p>
+
+<script>
+// Open (or create) the database
+const request = indexedDB.open("mydb", 1);
+
+request.onerror = function(event) {
+  console.error("Database error: " + event.target.errorCode);
+};
+
+request.onupgradeneeded = function(event) {
+  const db = event.target.result;
+  // Create an object store for this database
+  const objectStore = db.createObjectStore("mytable", { keyPath: "id", autoIncrement: true });
+  objectStore.createIndex("taskDesc", "taskDesc", { unique: false });
+  objectStore.createIndex("taskDate", "taskDate", { unique: false });
+  objectStore.createIndex("fromTime", "fromTime", { unique: false });
+  objectStore.createIndex("toTime", "toTime", { unique: false });
+  console.log("Object store created");
+};
+
+// Function to save task
+function saveTask(event) {
+  event.preventDefault(); // Prevent the default form submission
+  
+  const dbRequest = indexedDB.open("mydb", 1);
+
+  dbRequest.onsuccess = function(event) {
+    const db = event.target.result;
+    const transaction = db.transaction(["mytable"], "readwrite");
+    const objectStore = transaction.objectStore("mytable");
+
+    // Gather the data from the form
+    const taskData = {
+      taskDesc: document.getElementById("taskDesc").value,
+      taskDate: document.getElementById("taskDate").value,
+      fromTime: document.getElementById("fromTime").value,
+      toTime: document.getElementById("toTime").value
+    };
+
+    const request = objectStore.add(taskData); // Add the new task
+
+    request.onsuccess = function() {
+      console.log("Task added to the database:", taskData);
+      // Optionally, clear the form fields
+      document.getElementById("taskForm").reset();
+      // Show success message
+      document.getElementById("successMessage").style.display = "block";
+    };
+
+    request.onerror = function(event) {
+      console.error("Error adding task: ", event.target.error);
+    };
+  };
+
+  dbRequest.onerror = function(event) {
+    console.error("Error opening database: ", event.target.error);
+  };
+}
+</script>
+
+</body>
+</html>

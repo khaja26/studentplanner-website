@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<title>Student Planner</title>
+<style>
+body {
+  font-family: "Lato", sans-serif;
+  background-color: #f0f0f0;
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.sidenav {
+  height: 100%;
+  width: 0;
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  background-color: #282828;
+  background: linear-gradient(145deg, #2c3e50, #4ca1af);
+  overflow-x: hidden;
+  transition: 0.5s;
+  padding-top: 60px;
+  box-shadow: 2px 0px 5px rgba(0,0,0,0.5);
+}
+
+.sidenav a {
+  padding: 12px 8px 12px 32px;
+  text-decoration: none;
+  font-size: 20px;
+  color: #f0f0f0;
+  display: block;
+  transition: 0.3s;
+  font-family: "Arial", sans-serif;
+}
+
+.sidenav a:hover {
+  color: #f39c12;
+  background-color: rgba(255,255,255,0.1);
+  padding-left: 40px;
+  border-left: 4px solid #f39c12;
+  transition: 0.2s ease-in;
+}
+
+.sidenav .closebtn {
+  position: absolute;
+  top: 0;
+  right: 25px;
+  font-size: 36px;
+  margin-left: 50px;
+  color: #f0f0f0;
+  transition: 0.3s ease;
+}
+
+.sidenav .closebtn:hover {
+  color: #f39c12;
+}
+
+@media screen and (max-height: 450px) {
+  .sidenav {padding-top: 15px;}
+  .sidenav a {font-size: 18px;}
+}
+
+h2 {
+  color: #0a3d62; /* Dark blue color */
+  font-family: "Arial", sans-serif;
+  font-size: 28px;
+  margin-top: 20px;
+  text-align: center; /* Center text */
+  position: absolute; /* Position absolutely to control its placement */
+  top: 20px; /* Position from the top */
+  left: 50%; /* Center horizontally */
+  transform: translateX(-50%); /* Adjust for the width */
+}
+
+p {
+  font-size: 18px;
+  color: #444;
+  margin-top: 20px;
+  text-align: center;
+}
+
+span {
+  color: #2c3e50;
+  font-family: "Arial", sans-serif;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 30px;
+  position: absolute; /* Position absolutely */
+  top: 20px; /* Position from the top */
+  left: 20px; /* Position from the left */
+}
+
+span:hover {
+  color: #f39c12;
+  transition: 0.3s ease;
+  text-align: center;
+}
+
+.menu-title {
+  color: #2c3e50; /* Color for menu title */
+  font-family: "Arial", sans-serif;
+  font-weight: bold;
+  font-size: 24px; /* Size of menu title */
+  position: absolute; /* Position absolutely */
+  top: 20px; /* Position from the top */
+  right: 80px; /* Adjust position from the right */
+  display: none; /* Hide initially */
+}
+
+img {
+  margin-top: 20px; /* Space above the image */
+  max-width: 100%; /* Make image responsive */
+  height: auto; /* Maintain aspect ratio */
+}
+</style>
+</head>
+<link rel="manifest" href="/static/manifest.json">
+<body>
+
+<div id="mySidenav" class="sidenav">
+  <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+  <a href="#" onclick="openPageInNewWindow('enter-task.html')">Enter Task</a>
+  <a href="#" onclick="openPageInNewWindow('edit-task.html')">Edit Task</a>
+  <a href="#" onclick="openPageInNewWindow('delete-task.html')">Delete Task</a>
+  <a href="#" onclick="openPageInNewWindow('share-task-by-date.html')">Shre Task by Date</a>
+  <a href="#" onclick="openPageInNewWindow('show-all-tasks.html')">Show All Tasks</a>
+</div>
+
+<h2>Welcome to Student Planner</h2>
+
+<img src="happy-student.jpg" alt="Happy Student">
+
+<span onclick="openNav()">&#9776; open</span>
+
+
+<script>
+function openNav() {
+  document.getElementById("mySidenav").style.width = "250px";
+  document.getElementById("menuTitle").style.display = "block"; // Show menu title when nav is open
+}
+
+function closeNav() {
+  document.getElementById("mySidenav").style.width = "0";
+  document.getElementById("menuTitle").style.display = "none"; // Hide menu title when nav is closed
+}
+
+// Open page in a new window or tab
+function openPageInNewWindow(page) {
+  window.open(page, '_blank');
+}
+</script>
+
+</body>
+</html>

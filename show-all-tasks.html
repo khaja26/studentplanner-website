@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Show All Tasks</title>
+    <style>
+        body {
+            font-family: "Lato", sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #0a3d62;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+
+        th {
+            background-color: #0a3d62;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+
+<h2>All Tasks</h2>
+<table id="taskTable">
+    <thead>
+        <tr>
+            <th>Description</th>
+            <th>Date</th>
+            <th>From Time</th>
+            <th>To Time</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Tasks will be inserted here dynamically -->
+    </tbody>
+</table>
+
+<audio id="alarmAudio" src="alarm.mp3" preload="auto"></audio>
+
+<script>
+// Open (or create) the database
+const request = indexedDB.open("mydb", 1);
+
+request.onerror = function(event) {
+  console.error("Database error: " + event.target.errorCode);
+};
+
+request.onsuccess = function(event) {
+  const db = event.target.result;
+  displayAllTasks(db);
+  checkTaskAlert(db);
+};
+
+// Function to display all tasks
+function displayAllTasks(db) {
+  const transaction = db.transaction(["mytable"], "readonly");
+  const objectStore = transaction.objectStore("mytable");
+
+  const taskTableBody = document.querySelector("#taskTable tbody");
+  taskTableBody.innerHTML = "";  // Clear the table before adding new rows
+
+  objectStore.openCursor().onsuccess = function(event) {
+    const cursor = event.target.result;
+    if (cursor) {
+      const task = cursor.value;
+
+      // Create a row for each task
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${task.taskDesc}</td>
+        <td>${task.taskDate}</td>
+        <td>${task.fromTime}</td>
+        <td>${task.toTime}</td>
+      `;
+      taskTableBody.appendChild(row);
+
+      cursor.continue();  // Move to the next item
+    } else {
+      if (!taskTableBody.hasChildNodes()) {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td colspan="4" style="text-align:center;">No tasks found</td>`;
+        taskTableBody.appendChild(row);
+      }
+    }
+  };
+
+  objectStore.openCursor().onerror = function(event) {
+    console.error("Error fetching tasks: ", event.target.error);
+  };
+}
+
+// Function to check if the current task matches the system date and time
+function checkTaskAlert(db) {
+  const transaction = db.transaction(["mytable"], "readonly");
+  const objectStore = transaction.objectStore("mytable");
+
+  const currentDate = new Date().toISOString().split('T')[0]; // Get current system date in yyyy-mm-dd format
+  const currentTime = new Date().toTimeString().split(' ')[0].substring(0, 5); // Get current time in HH:mm format
+
+  objectStore.openCursor().onsuccess = function(event) {
+    const cursor = event.target.result;
+    if (cursor) {
+      const task = cursor.value;
+
+      // Compare the taskDate and fromTime with the system date and time
+      if (task.taskDate === currentDate && task.fromTime === currentTime) {
+        alert(`Reminder: Task "${task.taskDesc}" is scheduled now.`);
+        playAlarm(); // Play alarm
+      }
+
+      cursor.continue();  // Move to the next item
+    }
+  };
+}
+
+// Function to play the audio alarm
+function playAlarm() {
+  const audio = document.getElementById("alarmAudio");
+  audio.play();
+}
+
+// Check every minute for task reminders
+setInterval(function() {
+  const dbRequest = indexedDB.open("mydb", 1);
+  
+  dbRequest.onsuccess = function(event) {
+    const db = event.target.result;
+    checkTaskAlert(db);  // Re-check tasks every minute
+  };
+}, 60000); // 60000ms = 1 minute
+
+</script>
+
+</body>
+</html>
