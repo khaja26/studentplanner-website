@@ -36,7 +36,7 @@
             border-radius: 4px;
         }
 
-        input[type="submit"], button {
+        input[type="submit"] {
             background-color: #0a3d62;
             color: white;
             padding: 10px 15px;
@@ -45,11 +45,23 @@
             cursor: pointer;
         }
 
-        input[type="submit"]:hover, button:hover {
+        input[type="submit"]:hover {
             background-color: #f39c12;
         }
 
         .checkbox {
+            margin-right: 10px;
+        }
+
+        #taskList {
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #taskList label {
             margin-right: 10px;
         }
     </style>
@@ -58,20 +70,23 @@
 
 <h2>Edit Task</h2>
 
+<!-- Form to choose a date and search for tasks -->
 <form id="searchTaskForm" onsubmit="fetchTasksByDate(event)">
     <label for="taskDate">Select Date:</label>
     <input type="date" id="taskDate" name="taskDate" required>
     <input type="submit" value="Search">
 </form>
 
+<!-- Div to display list of tasks with checkboxes -->
 <div id="taskList" style="display:none;">
-    <h3>Select a task to edit:</h3>
-    <form id="taskSelectionForm" onsubmit="showEditForm(event)">
-        <div id="tasksContainer"></div>
-        <button type="submit">Edit</button>
+    <h3>Choose a Task to Edit:</h3>
+    <form id="taskSelectForm">
+        <!-- Task checkboxes will be dynamically added here -->
     </form>
+    <button onclick="editSelectedTask()">Edit Selected Task</button>
 </div>
 
+<!-- Form to edit a selected task -->
 <form id="editTaskForm" style="display:none;" onsubmit="updateTask(event)">
     <label for="taskDesc">Task Description:</label>
     <input type="text" id="taskDesc" name="taskDesc">
@@ -93,82 +108,82 @@
 const request = indexedDB.open("mydb", 1);
 
 request.onerror = function(event) {
-    console.error("Database error: " + event.target.errorCode);
+  console.error("Database error: " + event.target.errorCode);
 };
 
 let db;
 request.onsuccess = function(event) {
-    db = event.target.result;
+  db = event.target.result;
 };
 
-// Fetch tasks based on the selected date and display them
+// Fetch tasks based on the selected date
 function fetchTasksByDate(event) {
     event.preventDefault();
     const taskDate = document.getElementById("taskDate").value;
+
     const transaction = db.transaction(["mytable"], "readonly");
     const objectStore = transaction.objectStore("mytable");
-    const index = objectStore.index("taskDate");
-    const range = IDBKeyRange.only(taskDate);
-    const tasksContainer = document.getElementById("tasksContainer");
-    tasksContainer.innerHTML = ""; // Clear previous results
 
-    index.openCursor(range).onsuccess = function(event) {
-        const cursor = event.target.result;
-        if (cursor) {
-            const task = cursor.value;
-            const taskDiv = document.createElement("div");
-            taskDiv.innerHTML = `
-                <input type="radio" name="selectedTask" value="${task.id}">
-                <label>Task Description: ${task.taskDesc}, From: ${task.fromTime}, To: ${task.toTime}</label>
-            `;
-            tasksContainer.appendChild(taskDiv);
-            cursor.continue();
+    const index = objectStore.index("taskDate");
+    const request = index.getAll(taskDate); // Fetch all tasks for the selected date
+
+    request.onsuccess = function(event) {
+        const tasks = event.target.result;
+        if (tasks.length > 0) {
+            // Clear the previous task list
+            const taskList = document.getElementById("taskSelectForm");
+            taskList.innerHTML = "";
+
+            // Populate the task list with checkboxes
+            tasks.forEach((task, index) => {
+                const taskLabel = document.createElement("label");
+                taskLabel.innerHTML = `<input type="radio" name="selectedTask" value="${index}"> ${task.taskDesc} (From: ${task.fromTime}, To: ${task.toTime})`;
+                taskList.appendChild(taskLabel);
+                taskList.appendChild(document.createElement("br"));
+            });
+
+            document.getElementById("taskList").style.display = "block";
         } else {
-            if (tasksContainer.innerHTML === "") {
-                tasksContainer.innerHTML = "<p>No tasks found for this date.</p>";
-            } else {
-                document.getElementById("taskList").style.display = "block";
-            }
+            alert("No tasks found for this date.");
         }
+    };
+
+    request.onerror = function(event) {
+        console.error("Error fetching tasks: ", event.target.error);
     };
 }
 
-// Display the form to edit the selected task
-function showEditForm(event) {
-    event.preventDefault();
-    const selectedTaskId = document.querySelector('input[name="selectedTask"]:checked');
-    if (!selectedTaskId) {
-        alert("Please select a task to edit.");
-        return;
-    }
+// Edit the selected task
+function editSelectedTask() {
+    const selectedTaskIndex = document.querySelector('input[name="selectedTask"]:checked');
+    if (selectedTaskIndex) {
+        const transaction = db.transaction(["mytable"], "readonly");
+        const objectStore = transaction.objectStore("mytable");
 
-    const taskId = parseInt(selectedTaskId.value, 10);
-    const transaction = db.transaction(["mytable"], "readonly");
-    const objectStore = transaction.objectStore("mytable");
-    const request = objectStore.get(taskId);
+        const index = objectStore.index("taskDate");
+        const taskDate = document.getElementById("taskDate").value;
+        const request = index.getAll(taskDate);
 
-    request.onsuccess = function(event) {
-        const task = event.target.result;
-        if (task) {
+        request.onsuccess = function(event) {
+            const tasks = event.target.result;
+            const task = tasks[selectedTaskIndex.value];
+
             // Populate the form with task data
             document.getElementById("taskDesc").value = task.taskDesc;
             document.getElementById("fromTime").value = task.fromTime;
             document.getElementById("toTime").value = task.toTime;
             document.getElementById("editTaskForm").style.display = "block";
-        }
-    };
-
-    request.onerror = function(event) {
-        console.error("Error fetching task: ", event.target.error);
-    };
+        };
+    } else {
+        alert("Please select a task to edit.");
+    }
 }
 
 // Update the task data based on user input
 function updateTask(event) {
     event.preventDefault();
 
-    const selectedTaskId = document.querySelector('input[name="selectedTask"]:checked').value;
-    const taskId = parseInt(selectedTaskId, 10);
+    const taskDate = document.getElementById("taskDate").value;
     const taskDesc = document.getElementById("taskDesc").value;
     const fromTime = document.getElementById("fromTime").value;
     const toTime = document.getElementById("toTime").value;
@@ -181,29 +196,32 @@ function updateTask(event) {
 
     const transaction = db.transaction(["mytable"], "readwrite");
     const objectStore = transaction.objectStore("mytable");
-    const request = objectStore.get(taskId);
+
+    const index = objectStore.index("taskDate");
+    const request = index.getAll(taskDate);
 
     request.onsuccess = function(event) {
-        const task = event.target.result;
-        if (task) {
-            // Update fields only if corresponding checkboxes are checked
-            if (updateFields.taskDesc) task.taskDesc = updateFields.taskDesc;
-            if (updateFields.fromTime) task.fromTime = updateFields.fromTime;
-            if (updateFields.toTime) task.toTime = updateFields.toTime;
+        const tasks = event.target.result;
+        const selectedTaskIndex = document.querySelector('input[name="selectedTask"]:checked').value;
+        const task = tasks[selectedTaskIndex];
 
-            const updateRequest = objectStore.put(task);
+        // Update fields only if corresponding checkboxes are checked
+        if (updateFields.taskDesc) task.taskDesc = updateFields.taskDesc;
+        if (updateFields.fromTime) task.fromTime = updateFields.fromTime;
+        if (updateFields.toTime) task.toTime = updateFields.toTime;
 
-            updateRequest.onsuccess = function() {
-                alert("Task updated successfully!");
-                document.getElementById("editTaskForm").reset();
-                document.getElementById("editTaskForm").style.display = "none";
-                document.getElementById("taskList").style.display = "none";
-            };
+        const updateRequest = objectStore.put(task);
 
-            updateRequest.onerror = function(event) {
-                console.error("Error updating task: ", event.target.error);
-            };
-        }
+        updateRequest.onsuccess = function() {
+            alert("Task updated successfully!");
+            document.getElementById("editTaskForm").reset();
+            document.getElementById("editTaskForm").style.display = "none";
+            document.getElementById("taskList").style.display = "none";
+        };
+
+        updateRequest.onerror = function(event) {
+            console.error("Error updating task: ", event.target.error);
+        };
     };
 
     request.onerror = function(event) {
