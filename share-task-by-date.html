@@ -169,7 +169,7 @@ function shareTasks() {
   console.log('Sharing data:', taskData);
 
   // Use the navigator.share API for sharing tasks
-  if (navigator.canShare && navigator.canShare({ text: taskData })) {
+  if (navigator.share) {
     navigator.share({
       title: 'Task Details',
       text: taskData,
@@ -183,11 +183,9 @@ function shareTasks() {
       alert('An error occurred while sharing tasks.');
     });
   } else {
-    alert('Sharing is not supported or data is too large to share.');
+    alert('Sharing is not supported in this environment.');
   }
 }
-
-
 </script>
 
 </body>
