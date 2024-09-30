@@ -151,6 +151,8 @@ function displayTasks(tasks) {
 function shareTasks() {
   const taskItems = document.querySelectorAll('.task-item');
 
+  console.log('Number of tasks to share:', taskItems.length);
+
   if (taskItems.length === 0) {
     alert("No tasks available to share.");
     return;
@@ -164,24 +166,26 @@ function shareTasks() {
     taskData += `Task ${index + 1}:\n${desc}\n${fromTime}\n${toTime}\n\n`;
   });
 
-  // Check if the Web Share API is supported
+  console.log('Sharing data:', taskData);
+
   if (navigator.share) {
     navigator.share({
       title: 'Task Details',
       text: taskData,
     })
     .then(() => {
-      document.getElementById("shareMessage").style.display = "block";
       console.log('Tasks shared successfully.');
+      document.getElementById("shareMessage").style.display = "block";
     })
     .catch((error) => {
       console.error('Error sharing tasks:', error);
       alert('An error occurred while sharing tasks.');
     });
   } else {
-    alert('Sharing is not supported in this browser or device.');
+    alert('Sharing is not supported in this browser.');
   }
 }
+
 
 </script>
 
