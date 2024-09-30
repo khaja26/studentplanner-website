@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -147,7 +147,7 @@ function displayTasks(tasks) {
   });
 }
 
-// Function to share all tasks
+ // Function to share all tasks
 function shareTasks() {
   const taskItems = document.querySelectorAll('.task-item');
 
@@ -164,6 +164,7 @@ function shareTasks() {
     taskData += `Task ${index + 1}:\n${desc}\n${fromTime}\n${toTime}\n\n`;
   });
 
+  // Check if the Web Share API is supported
   if (navigator.share) {
     navigator.share({
       title: 'Task Details',
@@ -173,11 +174,15 @@ function shareTasks() {
       document.getElementById("shareMessage").style.display = "block";
       console.log('Tasks shared successfully.');
     })
-    .catch((error) => console.error('Error sharing tasks:', error));
+    .catch((error) => {
+      console.error('Error sharing tasks:', error);
+      alert('An error occurred while sharing tasks.');
+    });
   } else {
-    alert('Sharing is not supported in this browser.');
+    alert('Sharing is not supported in this browser or device.');
   }
 }
+
 </script>
 
 </body>
