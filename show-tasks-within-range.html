@@ -89,6 +89,8 @@ dbRequest.onupgradeneeded = function(event) {
     const db = event.target.result;
     const objectStore = db.createObjectStore("mytable", { keyPath: "id", autoIncrement: true });
     objectStore.createIndex("taskDate", "taskDate", { unique: false });
+    // Add status field for each task
+    objectStore.createIndex("status", "status", { unique: false });
 };
 
 dbRequest.onsuccess = function(event) {
@@ -144,6 +146,7 @@ function fetchTasksInRange() {
                 <p><strong>Date:</strong> ${task.taskDate}</p>
                 <p><strong>From Time:</strong> ${task.fromTime}</p>
                 <p><strong>To Time:</strong> ${task.toTime}</p>
+                <p><strong>Status:</strong> ${task.status}</p> <!-- Show task status -->
                 <hr>
             `;
             tasksContainer.appendChild(taskItem);
