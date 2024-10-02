@@ -82,9 +82,20 @@
 
 <script>
 // Open (or create) the database
-const request = indexedDB.open("mydb", 1);
+let db;
+const dbRequest = indexedDB.open("mydb", 1);
 
-request.onerror = function(event) {
+dbRequest.onupgradeneeded = function(event) {
+    const db = event.target.result;
+    const objectStore = db.createObjectStore("mytable", { keyPath: "id", autoIncrement: true });
+    objectStore.createIndex("taskDate", "taskDate", { unique: false });
+};
+
+dbRequest.onsuccess = function(event) {
+    db = event.target.result;
+};
+
+dbRequest.onerror = function(event) {
     console.error("Database error: " + event.target.errorCode);
 };
 
@@ -98,66 +109,62 @@ function fetchTasksInRange() {
         return;
     }
 
-    const dbRequest = indexedDB.open("mydb", 1);
+    if (new Date(fromDate) > new Date(toDate)) {
+        alert("From Date cannot be greater than To Date");
+        return;
+    }
 
-    dbRequest.onsuccess = function(event) {
-        const db = event.target.result;
-        const transaction = db.transaction(["mytable"], "readonly");
-        const objectStore = transaction.objectStore("mytable");
+    const transaction = db.transaction(["mytable"], "readonly");
+    const objectStore = transaction.objectStore("mytable");
 
-        const tasksContainer = document.getElementById("tasksContainer");
-        const taskDetails = document.getElementById("taskDetails");
-        const errorMessage = document.getElementById("errorMessage");
-        const startDateDisplay = document.getElementById("startDate");
-        const endDateDisplay = document.getElementById("endDate");
+    const tasksContainer = document.getElementById("tasksContainer");
+    const taskDetails = document.getElementById("taskDetails");
+    const errorMessage = document.getElementById("errorMessage");
+    const startDateDisplay = document.getElementById("startDate");
+    const endDateDisplay = document.getElementById("endDate");
 
-        // Clear previous tasks
-        tasksContainer.innerHTML = '';
-        errorMessage.style.display = "none";
+    // Clear previous tasks
+    tasksContainer.innerHTML = '';
+    errorMessage.style.display = "none";
 
-        // Fetch tasks within date range
-        const range = IDBKeyRange.bound(fromDate, toDate);
-        const request = objectStore.index("taskDate").openCursor(range);
+    // Fetch tasks within date range including chosen dates
+    const range = IDBKeyRange.bound(fromDate, toDate, false, false); // inclusive range
+    const request = objectStore.index("taskDate").openCursor(range);
 
-        request.onsuccess = function(event) {
-            const cursor = event.target.result;
+    request.onsuccess = function(event) {
+        const cursor = event.target.result;
 
-            if (cursor) {
-                const task = cursor.value;
-                const taskItem = document.createElement('div');
-                taskItem.className = 'task-item';
+        if (cursor) {
+            const task = cursor.value;
+            const taskItem = document.createElement('div');
+            taskItem.className = 'task-item';
 
-                taskItem.innerHTML = `
-                    <p><strong>Description:</strong> ${task.taskDesc}</p>
-                    <p><strong>Date:</strong> ${task.taskDate}</p>
-                    <p><strong>From Time:</strong> ${task.fromTime}</p>
-                    <p><strong>To Time:</strong> ${task.toTime}</p>
-                    <hr>
-                `;
-                tasksContainer.appendChild(taskItem);
-                
-                cursor.continue(); // Move to the next task
-            } else {
-                if (tasksContainer.innerHTML === '') {
-                    // If no tasks found
-                    errorMessage.style.display = "block";
-                }
+            taskItem.innerHTML = `
+                <p><strong>Description:</strong> ${task.taskDesc}</p>
+                <p><strong>Date:</strong> ${task.taskDate}</p>
+                <p><strong>From Time:</strong> ${task.fromTime}</p>
+                <p><strong>To Time:</strong> ${task.toTime}</p>
+                <hr>
+            `;
+            tasksContainer.appendChild(taskItem);
+
+            cursor.continue(); // Move to the next task
+        } else {
+            if (tasksContainer.innerHTML === '') {
+                // If no tasks found
+                errorMessage.style.display = "block";
             }
-        };
-
-        request.onerror = function(event) {
-            console.error("Error fetching tasks: ", event.target.error);
-        };
-
-        // Display date range
-        startDateDisplay.textContent = fromDate;
-        endDateDisplay.textContent = toDate;
-        taskDetails.style.display = tasksContainer.innerHTML ? "block" : "none"; // Show task details if tasks are present
+        }
     };
 
-    dbRequest.onerror = function(event) {
-        console.error("Error opening database: ", event.target.error);
+    request.onerror = function(event) {
+        console.error("Error fetching tasks: ", event.target.error);
     };
+
+    // Display date range
+    startDateDisplay.textContent = fromDate;
+    endDateDisplay.textContent = toDate;
+    taskDetails.style.display = "block"; // Show task details if tasks are present
 }
 </script>
 
