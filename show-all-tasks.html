@@ -47,6 +47,7 @@
             <th>Date</th>
             <th>From Time</th>
             <th>To Time</th>
+            <th>Task Status</th> <!-- New column for Task Status -->
         </tr>
     </thead>
     <tbody>
@@ -83,13 +84,14 @@ function displayAllTasks(db) {
     if (cursor) {
       const task = cursor.value;
 
-      // Create a row for each task
+      // Create a row for each task including the task status
       const row = document.createElement("tr");
       row.innerHTML = `
         <td>${task.taskDesc}</td>
         <td>${task.taskDate}</td>
         <td>${task.fromTime}</td>
         <td>${task.toTime}</td>
+        <td>${task.taskStatus}</td> <!-- Display task status -->
       `;
       taskTableBody.appendChild(row);
 
@@ -97,7 +99,7 @@ function displayAllTasks(db) {
     } else {
       if (!taskTableBody.hasChildNodes()) {
         const row = document.createElement("tr");
-        row.innerHTML = `<td colspan="4" style="text-align:center;">No tasks found</td>`;
+        row.innerHTML = `<td colspan="5" style="text-align:center;">No tasks found</td>`;
         taskTableBody.appendChild(row);
       }
     }

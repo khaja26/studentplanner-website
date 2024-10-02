@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Show Tasks Within Range</title>
+    <style>
+        body {
+            font-family: "Lato", sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #0a3d62; /* Dark blue color */
+        }
+
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="date"], button {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #0a3d62;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #f39c12;
+        }
+
+        .taskDetails {
+            background-color: #ffffff;
+            padding: 10px;
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .message {
+            margin-top: 20px;
+            color: #e74c3c; /* Red for errors */
+            font-weight: bold;
+            display: none;
+        }
+
+        .task-item {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Show Tasks Within Date Range</h2>
+<form id="rangeForm">
+    <label for="fromDate">From Date:</label><br>
+    <input type="date" id="fromDate" name="fromDate" required><br><br>
+    <label for="toDate">To Date:</label><br>
+    <input type="date" id="toDate" name="toDate" required><br><br>
+    <button type="button" onclick="fetchTasksInRange()">Status Within Range</button>
+</form>
+
+<!-- Task Details will be displayed here -->
+<div class="taskDetails" id="taskDetails" style="display: none;">
+    <h3>Task Details from <span id="startDate"></span> to <span id="endDate"></span></h3>
+    <div id="tasksContainer"></div>
+</div>
+
+<p class="message" id="errorMessage">No tasks found for the selected date range.</p>
+
+<script>
+// Open (or create) the database
+const request = indexedDB.open("mydb", 1);
+
+request.onerror = function(event) {
+    console.error("Database error: " + event.target.errorCode);
+};
+
+// Function to fetch tasks within date range
+function fetchTasksInRange() {
+    const fromDate = document.getElementById("fromDate").value;
+    const toDate = document.getElementById("toDate").value;
+
+    if (!fromDate || !toDate) {
+        alert("Please select both dates.");
+        return;
+    }
+
+    const dbRequest = indexedDB.open("mydb", 1);
+
+    dbRequest.onsuccess = function(event) {
+        const db = event.target.result;
+        const transaction = db.transaction(["mytable"], "readonly");
+        const objectStore = transaction.objectStore("mytable");
+
+        const tasksContainer = document.getElementById("tasksContainer");
+        const taskDetails = document.getElementById("taskDetails");
+        const errorMessage = document.getElementById("errorMessage");
+        const startDateDisplay = document.getElementById("startDate");
+        const endDateDisplay = document.getElementById("endDate");
+
+        // Clear previous tasks
+        tasksContainer.innerHTML = '';
+        errorMessage.style.display = "none";
+
+        // Fetch tasks within date range
+        const range = IDBKeyRange.bound(fromDate, toDate);
+        const request = objectStore.index("taskDate").openCursor(range);
+
+        request.onsuccess = function(event) {
+            const cursor = event.target.result;
+
+            if (cursor) {
+                const task = cursor.value;
+                const taskItem = document.createElement('div');
+                taskItem.className = 'task-item';
+
+                taskItem.innerHTML = `
+                    <p><strong>Description:</strong> ${task.taskDesc}</p>
+                    <p><strong>Date:</strong> ${task.taskDate}</p>
+                    <p><strong>From Time:</strong> ${task.fromTime}</p>
+                    <p><strong>To Time:</strong> ${task.toTime}</p>
+                    <hr>
+                `;
+                tasksContainer.appendChild(taskItem);
+                
+                cursor.continue(); // Move to the next task
+            } else {
+                if (tasksContainer.innerHTML === '') {
+                    // If no tasks found
+                    errorMessage.style.display = "block";
+                }
+            }
+        };
+
+        request.onerror = function(event) {
+            console.error("Error fetching tasks: ", event.target.error);
+        };
+
+        // Display date range
+        startDateDisplay.textContent = fromDate;
+        endDateDisplay.textContent = toDate;
+        taskDetails.style.display = tasksContainer.innerHTML ? "block" : "none"; // Show task details if tasks are present
+    };
+
+    dbRequest.onerror = function(event) {
+        console.error("Error opening database: ", event.target.error);
+    };
+}
+</script>
+
+</body>
+</html>

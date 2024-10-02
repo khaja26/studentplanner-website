@@ -28,7 +28,7 @@
             margin: 10px 0 5px;
         }
 
-        input[type="date"], input[type="text"], input[type="time"] {
+        input[type="date"], input[type="text"], input[type="time"], select {
             width: calc(100% - 20px);
             padding: 10px;
             margin-bottom: 10px;
@@ -100,6 +100,15 @@
     <input type="time" id="toTime" name="toTime">
     <input type="checkbox" id="toTimeCheck" class="checkbox"> Update this field
 
+    <label for="taskStatus">Task Status:</label>
+    <select id="taskStatus" name="taskStatus">
+        <option value="Pending">Pending</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Completed">Completed</option>
+        <option value="Cancelled">Cancelled</option>
+    </select>
+    <input type="checkbox" id="taskStatusCheck" class="checkbox"> Update this field
+
     <br><br>
     <!-- Place update button on a new line -->
     <input type="submit" value="Update">
@@ -110,12 +119,12 @@
 const request = indexedDB.open("mydb", 1);
 
 request.onerror = function(event) {
-  console.error("Database error: " + event.target.errorCode);
+    console.error("Database error: " + event.target.errorCode);
 };
 
 let db;
 request.onsuccess = function(event) {
-  db = event.target.result;
+    db = event.target.result;
 };
 
 // Fetch tasks based on the selected date
@@ -139,7 +148,7 @@ function fetchTasksByDate(event) {
             // Populate the task list with checkboxes
             tasks.forEach((task, index) => {
                 const taskLabel = document.createElement("label");
-                taskLabel.innerHTML = `<input type="radio" name="selectedTask" value="${index}"> ${task.taskDesc} (From: ${task.fromTime}, To: ${task.toTime})`;
+                taskLabel.innerHTML = `<input type="radio" name="selectedTask" value="${index}"> ${task.taskDesc} (From: ${task.fromTime}, To: ${task.toTime}, Status: ${task.taskStatus})`;
                 taskList.appendChild(taskLabel);
                 taskList.appendChild(document.createElement("br"));
             });
@@ -174,6 +183,7 @@ function editSelectedTask() {
             document.getElementById("taskDesc").value = task.taskDesc;
             document.getElementById("fromTime").value = task.fromTime;
             document.getElementById("toTime").value = task.toTime;
+            document.getElementById("taskStatus").value = task.taskStatus; // Set selected status
             document.getElementById("editTaskForm").style.display = "block";
         };
     } else {
@@ -189,11 +199,13 @@ function updateTask(event) {
     const taskDesc = document.getElementById("taskDesc").value;
     const fromTime = document.getElementById("fromTime").value;
     const toTime = document.getElementById("toTime").value;
+    const taskStatus = document.getElementById("taskStatus").value;
 
     const updateFields = {
         taskDesc: document.getElementById("taskDescCheck").checked ? taskDesc : null,
         fromTime: document.getElementById("fromTimeCheck").checked ? fromTime : null,
-        toTime: document.getElementById("toTimeCheck").checked ? toTime : null
+        toTime: document.getElementById("toTimeCheck").checked ? toTime : null,
+        taskStatus: document.getElementById("taskStatusCheck").checked ? taskStatus : null // New field
     };
 
     const transaction = db.transaction(["mytable"], "readwrite");
@@ -211,6 +223,7 @@ function updateTask(event) {
         if (updateFields.taskDesc) task.taskDesc = updateFields.taskDesc;
         if (updateFields.fromTime) task.fromTime = updateFields.fromTime;
         if (updateFields.toTime) task.toTime = updateFields.toTime;
+        if (updateFields.taskStatus) task.taskStatus = updateFields.taskStatus; // Update status if checked
 
         const updateRequest = objectStore.put(task);
 

@@ -23,7 +23,7 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
 
-        input[type="text"], input[type="date"], input[type="time"] {
+        input[type="text"], input[type="date"], input[type="time"], select {
             width: calc(100% - 20px);
             padding: 10px;
             margin: 10px 0;
@@ -64,6 +64,14 @@
     <input type="time" id="fromTime" name="fromTime" required><br><br>
     <label for="toTime">To Time:</label><br>
     <input type="time" id="toTime" name="toTime" required><br><br>
+    <label for="taskStatus">Task Status:</label><br>
+    <select id="taskStatus" name="taskStatus" required>
+        <option value="">Select Status</option>
+        <option value="Task will Start Now">Task will Start Now</option>
+        <option value="Task not started">Task not Started</option>
+        <option value="Task in Progress">Task in Progress</option>
+        <option value="Task Completed">Task Completed</option>
+    </select><br><br>
     <input type="submit" value="Submit">
 </form>
 
@@ -85,6 +93,7 @@ request.onupgradeneeded = function(event) {
   objectStore.createIndex("taskDate", "taskDate", { unique: false });
   objectStore.createIndex("fromTime", "fromTime", { unique: false });
   objectStore.createIndex("toTime", "toTime", { unique: false });
+  objectStore.createIndex("taskStatus", "taskStatus", { unique: false }); // Added index for taskStatus
   console.log("Object store created");
 };
 
@@ -104,7 +113,8 @@ function saveTask(event) {
       taskDesc: document.getElementById("taskDesc").value,
       taskDate: document.getElementById("taskDate").value,
       fromTime: document.getElementById("fromTime").value,
-      toTime: document.getElementById("toTime").value
+      toTime: document.getElementById("toTime").value,
+      taskStatus: document.getElementById("taskStatus").value // Get task status
     };
 
     const request = objectStore.add(taskData); // Add the new task
