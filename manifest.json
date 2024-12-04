@@ -8,4 +8,5 @@
   "short_name": "Student Planner",
   "id": "SP",
   "description": "Welcome to Student Planner App. This app has been developed exclusively for students to manage their study plans and organize their schedules. It helps students keep track of their academic tasks and deadlines, ensuring better time management and productivity.\n\nWhile this app is designed with students in mind, it can also be used by anyone looking to plan and manage their tasks efficiently, regardless of the nature of the tasks."
+  "start_url": "/index.html",
 }
