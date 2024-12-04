@@ -1,19 +1,11 @@
 {
-  "name": "Student Planner",
-  "theme_color": "#cb3434",
-  "background_color": "#38cc74",
-  "short_name": "SPL",
-  "start_url": "/index.html",
-  "id": "SPL",
-  "description": "This app is for students.",
-
-  "display_override": [
-    "fullscreen",
-    "standalone",
-    "browser",
-    "minimal-ui",
-    "window-controls-overlay"
-  ],
+  "start_url": "index.html",
+  "dir": "auto",
+  "scope": "index,html",
+  "lang": "en",
+  "orientation": "portrait-primary",
+  "display": "fullscreen",
+  "prefer_related_applications": true,
   "categories": [
     "education"
   ]
